@@ -12,6 +12,7 @@ int main() {
     my_graph.add_node('D');
     my_graph.add_node('E');
     my_graph.add_node('F');
+    my_graph.add_node('G');
 
     my_graph.add_edge('B', 'A', 7);
     my_graph.add_edge('C', 'F', 16);
@@ -26,7 +27,13 @@ int main() {
 
     //my_graph.print_djikstras_debug('A');
 
-    my_graph.print_djikstra_single_path_debug('A', 'F');
+    //my_graph.print_djikstra_single_path_debug('A', 'F');
+
+    //my_graph.print_djikstras_debug('A');
+
+    //std::cout << my_graph.heuristic_function('A', 'E') << "\n";
+
+    my_graph.a_star_djikstras_time_comparison('A', 'F', 10000);
 
     return 0;
 }

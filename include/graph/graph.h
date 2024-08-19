@@ -6,7 +6,9 @@
 #include <stack>
 #include <queue>
 #include <deque>
+#include <set>
 #include <iostream>
+#include <chrono>
 
 template<typename T>
 class adj_list_entry {
@@ -80,9 +82,14 @@ public:
     void print_djikstras_debug(T start_node) {
         std::vector<std::tuple<T, int, T>> djikstra_output = Djikstras(start_node);
         for (auto const& entry : djikstra_output) {
-            std::cout << "Node: " << std::get<0>(entry) << ", Distance From " << start_node << ": " << std::get<1>(entry) << ", Previous Node In Path: " << std::get<2>(entry);
-
-            std::cout << "\n";
+            if (std::get<1>(entry) == 65535) {
+                std::cout << "Node " << std::get<0>(entry) << " is not connected to " << start_node;
+                std::cout << "\n";
+            }
+            else {
+                std::cout << "Node: " << std::get<0>(entry) << ", Distance From " << start_node << ": " << std::get<1>(entry) << ", Previous Node In Path: " << std::get<2>(entry);
+                std::cout << "\n";
+            }
         }
     }
 
@@ -96,6 +103,63 @@ public:
         }
 
         std::cout << "\n";
+    }
+
+    void print_a_star_debug(T start, T end) {
+        std::deque<T> a_star_output = a_star(start, end);
+        for (T entry : a_star_output) {
+            std:: cout << entry << " ";
+        }
+         std::cout << "\n";
+    }
+
+    void a_star_djikstras_time_comparison(T start, T end, int num_iterations) {
+        std::vector<double> djikstras_time;
+        std::vector<double> a_star_time;
+
+        auto avg_djikstras_time = 0;
+        auto avg_a_star_time = 0;
+
+        auto start_time = std::chrono::high_resolution_clock::now();
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::nano> time_taken;
+
+        for (int i = 0; i < num_iterations; i++) {
+            start_time = std::chrono::high_resolution_clock::now();
+            shortest_path_djikstras(start, end);
+            end_time = std::chrono::high_resolution_clock::now();
+            time_taken = end_time - start_time;
+            djikstras_time.emplace_back(time_taken.count());
+        }
+
+        for (double entry : djikstras_time) {
+            avg_djikstras_time += entry;
+        }
+
+        avg_djikstras_time = avg_djikstras_time / num_iterations;
+
+
+        for (int i = 0; i < num_iterations; i++) {
+            start_time = std::chrono::high_resolution_clock::now();
+            a_star(start, end);
+            end_time = std::chrono::high_resolution_clock::now();
+            time_taken = end_time - start_time;
+            a_star_time.emplace_back(time_taken.count());
+        }
+
+        for (double entry : a_star_time) {
+            avg_a_star_time += entry;
+        }
+
+        avg_a_star_time = avg_a_star_time / num_iterations;
+
+        std::cout << "Djikstra's Average Time: " << avg_djikstras_time << " ns\n";
+        std::cout << "A* Average Time: " << avg_a_star_time << " ns\n";
+
+    }
+
+    double heuristic_function(T start, T goal) {
+       return 0; // placeholder heuristic function (BECOMES EQUIVALENT TO DJIKSTRAS)
     }
 
     void add_node(T node) {
@@ -195,8 +259,6 @@ public:
         distance_list[start] = 0;
         next_node_queue.push({0, start});
 
-        std::cout << "\n";
-
         while (!next_node_queue.empty()) {
             std::pair<int, T> current_node = next_node_queue.top();
             next_node_queue.pop();
@@ -245,6 +307,61 @@ public:
         return path;
 
     }
+    
+    std::deque<T> a_star(T start, T end) {
+        std::priority_queue<std::pair<double, T>, std::vector<std::pair<double, T>>, std::greater<>> to_explore; // nodes we need to explore prioritized by a lower estimated cost
+        std::map<T, double> g_cost; // maps actual cost from start to end
+        std::map<T, double> f_cost; // maps the estimated cost (g_cost + heurisitic)
+        std::map<T, T> from; // maps each node to previous node on shorteest path
+        std::set<T> closed; // fully explored nodes
+
+        // Initialize costs
+        for (const auto& [node, list] : adj_list) { // sets the g and f cost of all nodes to a value that is essentially infinity 
+            g_cost[node] = 65535;
+            f_cost[node] = 65535;
+        }
+
+        g_cost[start] = 0; // cost to reach itself is 0
+        f_cost[start] = heuristic_function(start, end); // heuristic estimated cost from start to end
+        to_explore.emplace(f_cost[start], start); // the first node is thrown into the priority queue to be explored
+
+        while (!to_explore.empty()) {
+            T current_node = to_explore.top().second; // pull the node with the lowest f cost and explore it
+            to_explore.pop();
+
+            if (current_node == end) { // if the current node we are exploring is the last one, we have found the path...
+                std::deque<T> path;
+                while (current_node != start) { // push nodes onto the path deque
+                    path.push_front(current_node);
+                    current_node = from[current_node]; // pull the prior node and repeat until we get to the first node
+                }
+                path.push_front(start);
+                return path;
+            }
+
+            closed.insert(current_node); // mark the current node as fully explored and thus avoid redundancies
+
+            T neighbor;
+            for (const auto& neighbor_entry : adj_list[current_node]) { // iterate over all neighbor nodes of the current node being explored
+                neighbor = neighbor_entry.get_node(); // set a neighbor node to explore
+                double tentative_g_cost = g_cost[current_node] + neighbor_entry.get_weight(); // calculate a tentative g_cost based on the g_cost of the current node and the weight of the attachment to the neighbor
+
+                if (closed.find(neighbor) != closed.end()) { // if the neighbor has been explored, go onto the next neighbor
+                    continue;
+                }
+
+                if (tentative_g_cost < g_cost[neighbor]) { // if the new calculated g_cost is better than the current one stored, update the g_cost
+                    from[neighbor] = current_node; // update the path
+                    g_cost[neighbor] = tentative_g_cost; // set the new g_cost
+                    f_cost[neighbor] = g_cost[neighbor] + heuristic_function(neighbor, end); // set f_cost to the current g_cost plus the value estimated by the heuristic function to the end from the neighbor (becomes more accurate over time)
+                    to_explore.emplace(f_cost[neighbor], neighbor); // add the new neighbor to the priority queue to be explored
+                }
+            }
+        }
+
+        return {}; // if all paths are exhausted, then no path exists, so return an empty deque
+    }
+
 
 };
 
