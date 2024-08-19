@@ -5,6 +5,7 @@
 #include <vector>
 #include <stack>
 #include <queue>
+#include <deque>
 #include <iostream>
 
 template<typename T>
@@ -58,6 +59,7 @@ public:
 
     void print_dfs_debug(T start_node) {
         std::vector<T> traversal = depth_first_traversal(start_node);
+        std::cout << "DFS: ";
         for (T entry : traversal) {
             std::cout << entry << " ";
         }
@@ -67,7 +69,29 @@ public:
 
     void print_bfs_debug(T start_node) {
         std::vector<T> traversal = breadth_first_traversal(start_node);
+        std::cout << "BFS: ";
         for (T entry : traversal) {
+            std::cout << entry << " ";
+        }
+
+        std::cout << "\n";
+    }
+
+    void print_djikstras_debug(T start_node) {
+        std::vector<std::tuple<T, int, T>> djikstra_output = Djikstras(start_node);
+        for (auto const& entry : djikstra_output) {
+            std::cout << "Node: " << std::get<0>(entry) << ", Distance From " << start_node << ": " << std::get<1>(entry) << ", Previous Node In Path: " << std::get<2>(entry);
+
+            std::cout << "\n";
+        }
+    }
+
+    void print_djikstra_single_path_debug(T start, T end) {
+        std::deque<T> path = shortest_path_djikstras(start, end);\
+
+        std::cout << "Shortest path from " << start << " to " << end << ": "; 
+
+        for (const auto& entry : path) {
             std::cout << entry << " ";
         }
 
@@ -155,6 +179,71 @@ public:
         }
 
         return traversal_list; // return the traversal
+    }
+
+    std::vector<std::tuple<T, int, T>> Djikstras(T start) {
+        std::map<T, int> distance_list;
+        std::map<T, T> previous_nodes;
+        std::priority_queue<std::pair<int, T>, std::vector<std::pair<int, T>>, std::greater<>> next_node_queue;
+        std::vector<std::tuple<T, int, T>> path_lengths;
+
+        for (auto const& [node, adj_vec] : adj_list) {
+            distance_list[node] = 65535;
+            previous_nodes[node] = T();
+        }
+
+        distance_list[start] = 0;
+        next_node_queue.push({0, start});
+
+        std::cout << "\n";
+
+        while (!next_node_queue.empty()) {
+            std::pair<int, T> current_node = next_node_queue.top();
+            next_node_queue.pop();
+
+            for (auto const& entry : adj_list[current_node.second]) {
+                int adjusted_distance = entry.get_weight() + current_node.first;
+                if (adjusted_distance < distance_list[entry.get_node()]) {
+                    distance_list[entry.get_node()] = adjusted_distance;
+                    previous_nodes[entry.get_node()] = current_node.second;
+                    next_node_queue.push({adjusted_distance, entry.get_node()});
+                }
+            }
+        }
+
+        for (auto const& [node, dist] : distance_list) {
+            path_lengths.emplace_back(node, dist, previous_nodes[node]);
+        }
+
+        return path_lengths;
+    }
+
+    std::deque<T> shortest_path_djikstras(T start, T end) {
+        std::vector<std::tuple<T, int, T>> full_djikstras = Djikstras(start);
+        std::deque<T> path;
+
+        std::tuple<T, int, T> previous_node;
+        for (const auto& node : full_djikstras) {
+            if (std::get<0>(node) == end) {
+                previous_node = node;
+                break;
+            }
+        }
+
+        path.push_front(end);
+
+        while (std::get<0>(previous_node) != start) {
+            for (const auto& current_node : full_djikstras) {
+                if (std::get<0>(current_node) == std::get<2>(previous_node)) {
+                    path.push_front(std::get<0>(current_node));
+                    previous_node = current_node;
+                    break;
+                }
+            }
+        }
+
+        return path;
+
     }
 
 };
