@@ -33,7 +33,25 @@ int main() {
 
     //std::cout << my_graph.heuristic_function('A', 'E') << "\n";
 
-    my_graph.a_star_djikstras_time_comparison('A', 'F', 10000);
+    //my_graph.a_star_djikstras_time_comparison('A', 'F', 10000);
+
+    //std::cout << my_graph.is_acyclic() << "\n";
+
+    graph<char> my_graph2(true);
+    my_graph2.add_node('A');
+    my_graph2.add_node('C');
+    my_graph2.add_node('G');
+    my_graph2.add_node('F');
+
+    my_graph2.add_edge('A', 'C', 1);
+    my_graph2.add_edge('C', 'G', 1);
+    my_graph2.add_edge('C', 'F', 1);
+
+    std::cout << my_graph2.is_acyclic() << "\n";
+
+    my_graph2.add_edge('F', 'A', 1);
+
+    std::cout << my_graph2.is_acyclic() << "\n";
 
     return 0;
 }

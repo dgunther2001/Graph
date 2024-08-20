@@ -42,13 +42,13 @@ public:
     graph(bool directed) : directed(directed) {}
     ~graph() {}
 
-    void print_nodes_debug() {
+    const void print_nodes_debug() {
         for (auto const& [node, adj_list] : adj_list) {
             std::cout << node << "\n";
         }
     }
 
-    void print_graph_debug() {
+    const void print_graph_debug() {
         for (auto const& [node, adj_list] : adj_list) {
             std::cout << node << ": ";
             for(auto const& entry : adj_list) {
@@ -59,7 +59,7 @@ public:
         }
     }
 
-    void print_dfs_debug(T start_node) {
+    const void print_dfs_debug(T start_node) {
         std::vector<T> traversal = depth_first_traversal(start_node);
         std::cout << "DFS: ";
         for (T entry : traversal) {
@@ -69,7 +69,7 @@ public:
         std::cout << "\n";
     }
 
-    void print_bfs_debug(T start_node) {
+    const void print_bfs_debug(T start_node) {
         std::vector<T> traversal = breadth_first_traversal(start_node);
         std::cout << "BFS: ";
         for (T entry : traversal) {
@@ -79,7 +79,7 @@ public:
         std::cout << "\n";
     }
 
-    void print_djikstras_debug(T start_node) {
+    const void print_djikstras_debug(T start_node) {
         std::vector<std::tuple<T, int, T>> djikstra_output = Djikstras(start_node);
         for (auto const& entry : djikstra_output) {
             if (std::get<1>(entry) == 65535) {
@@ -93,7 +93,7 @@ public:
         }
     }
 
-    void print_djikstra_single_path_debug(T start, T end) {
+    const void print_djikstra_single_path_debug(T start, T end) {
         std::deque<T> path = shortest_path_djikstras(start, end);\
 
         std::cout << "Shortest path from " << start << " to " << end << ": "; 
@@ -105,7 +105,7 @@ public:
         std::cout << "\n";
     }
 
-    void print_a_star_debug(T start, T end) {
+    const void print_a_star_debug(T start, T end) {
         std::deque<T> a_star_output = a_star(start, end);
         for (T entry : a_star_output) {
             std:: cout << entry << " ";
@@ -113,7 +113,7 @@ public:
          std::cout << "\n";
     }
 
-    void a_star_djikstras_time_comparison(T start, T end, int num_iterations) {
+    const void a_star_djikstras_time_comparison(T start, T end, int num_iterations) {
         std::vector<double> djikstras_time;
         std::vector<double> a_star_time;
 
@@ -158,11 +158,11 @@ public:
 
     }
 
-    double heuristic_function(T start, T goal) {
+    const double heuristic_function(T start, T goal) {
        return 0; // placeholder heuristic function (BECOMES EQUIVALENT TO DJIKSTRAS)
     }
 
-    void add_node(T node) {
+     void add_node(T node) {
         std::vector<adj_list_entry<T>> empty_adj_list;
         adj_list.insert({node, empty_adj_list});
     }
@@ -185,7 +185,7 @@ public:
         }
     }
 
-    std::vector<T> depth_first_traversal(T start_node) {
+    const std::vector<T> depth_first_traversal(T start_node) {
         std::vector<T> traversal_list; // the returned list in order
         std::stack<T> traversal_stack; // stack used to implement traversal
         std::vector<T> visited_list; // list of nodes already visited
@@ -216,7 +216,7 @@ public:
         return traversal_list; // return the traversal
     }
 
-    std::vector<T> breadth_first_traversal(T start_node) {
+    const std::vector<T> breadth_first_traversal(T start_node) {
         std::vector<T> traversal_list; // the returned list in order
         std::queue<T> traversal_queue; // queue used to implement traversal
         std::vector<T> visited_list; // list of nodes already visited
@@ -245,7 +245,7 @@ public:
         return traversal_list; // return the traversal
     }
 
-    std::vector<std::tuple<T, int, T>> Djikstras(T start) {
+    const std::vector<std::tuple<T, int, T>> Djikstras(T start) {
         std::map<T, int> distance_list;
         std::map<T, T> previous_nodes;
         std::priority_queue<std::pair<int, T>, std::vector<std::pair<int, T>>, std::greater<>> next_node_queue;
@@ -280,7 +280,7 @@ public:
         return path_lengths;
     }
 
-    std::deque<T> shortest_path_djikstras(T start, T end) {
+   const std::deque<T> shortest_path_djikstras(T start, T end) {
         std::vector<std::tuple<T, int, T>> full_djikstras = Djikstras(start);
         std::deque<T> path;
 
@@ -308,7 +308,7 @@ public:
 
     }
     
-    std::deque<T> a_star(T start, T end) {
+    const std::deque<T> a_star(T start, T end) {
         std::priority_queue<std::pair<double, T>, std::vector<std::pair<double, T>>, std::greater<>> to_explore; // nodes we need to explore prioritized by a lower estimated cost
         std::map<T, double> g_cost; // maps actual cost from start to end
         std::map<T, double> f_cost; // maps the estimated cost (g_cost + heurisitic)
@@ -360,6 +360,44 @@ public:
         }
 
         return {}; // if all paths are exhausted, then no path exists, so return an empty deque
+    }
+
+    const bool is_acyclic() {
+        if (directed == false) {
+            return false;
+        }
+
+        std::set<T> visited;
+        std::queue<T> to_visit;
+
+        T current_node = adj_list.begin()->first;
+
+        if (current_node == adj_list.end()->first) {
+            return true;
+        }
+
+        std::vector<adj_list_entry<T>> current_adj_list = adj_list[current_node]; 
+
+        to_visit.push(current_node);
+
+        while(!to_visit.empty()) {
+
+            current_node = to_visit.front();
+            current_adj_list = adj_list[current_node];
+            to_visit.pop();
+
+            if (visited.find(current_node) != visited.end()) {
+                return false;
+            }
+
+            visited.emplace(current_node);
+
+            for (auto const& entry : current_adj_list) {
+                to_visit.push(entry.get_node());
+            }
+        }
+
+        return true;
     }
 
 
