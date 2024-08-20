@@ -367,38 +367,46 @@ public:
             return false;
         }
 
-        std::set<T> visited;
-        std::queue<T> to_visit;
+        // iterate over the nodes in the graph and fully explore them looking for cycles
+        // how to do this for specific nodes
+            // do a depth first traversal on each and every node and look for cycles (see if it connects back to itself)
+            // if it does, return false, otherwise after we have executed a dfs for each node and not detected any cycles, return true
+    
+        // what i need...
+        // a call stack that stores the current DFS that resets with the for loop
+        std::stack<T> current_traversal;
+        // a set of visited nodes that stores the current path of the call stack that removes nodes when specific paths have been resolved
+        std::set<T> visited_in_current_iteration;
 
-        T current_node = adj_list.begin()->first;
+        for (auto const& [node, list] : adj_list) { // iterates over each node in the graph
+            while (!current_traversal.empty()) { // empties the current DFS stack
+                current_traversal.pop();
+            }
+            
+            current_traversal.push(node); // push the node onto the stack and proceed with a standard DFS
 
-        if (current_node == adj_list.end()->first) {
-            return true;
-        }
+            T current_node; // declare a current_node variable for the DFS
 
-        std::vector<adj_list_entry<T>> current_adj_list = adj_list[current_node]; 
+            while(!current_traversal.empty()) { // while the DFS can proceed...
+                current_node = current_traversal.top(); // pull the current node off of the top of the stack and store it
+                current_traversal.pop(); // pop the stack
+                visited_in_current_iteration.erase(current_node); // once a particular node has been fully explored, remove it as we are no longer exploring that path
 
-        to_visit.push(current_node);
-
-        while(!to_visit.empty()) {
-
-            current_node = to_visit.front();
-            current_adj_list = adj_list[current_node];
-            to_visit.pop();
-
-            if (visited.find(current_node) != visited.end()) {
-                return false;
+                for (auto const& entry : adj_list[current_node]) { // iterate over the adjacency list of the current node
+                    if (visited_in_current_iteration.find(entry.get_node()) != visited_in_current_iteration.end()) { // if the node has previously been visited in the current DFS, return false as this indicates a back edge
+                        return false;
+                    }
+                    current_traversal.push(entry.get_node());// otherwise put the node on the stack
+                    visited_in_current_iteration.emplace(entry.get_node()); // add the node to the set of visited nodes for the current DFS iteration
+                }
             }
 
-            visited.emplace(current_node);
-
-            for (auto const& entry : current_adj_list) {
-                to_visit.push(entry.get_node());
-            }
         }
-
+        
         return true;
+
     }
+
 
 
 };
