@@ -113,6 +113,14 @@ public:
          std::cout << "\n";
     }
 
+    const void print_topological_sort_debug() {
+        std::vector<T> topo_sort = topological_sort();
+        for (T entry : topo_sort) {
+            std::cout << entry << " ";
+        }
+        std::cout << "\n";
+    }
+
     const void a_star_djikstras_time_comparison(T start, T end, int num_iterations) {
         std::vector<double> djikstras_time;
         std::vector<double> a_star_time;
@@ -379,9 +387,6 @@ public:
         std::set<T> visited_in_current_iteration;
 
         for (auto const& [node, list] : adj_list) { // iterates over each node in the graph
-            while (!current_traversal.empty()) { // empties the current DFS stack
-                current_traversal.pop();
-            }
             
             current_traversal.push(node); // push the node onto the stack and proceed with a standard DFS
 
@@ -390,7 +395,6 @@ public:
             while(!current_traversal.empty()) { // while the DFS can proceed...
                 current_node = current_traversal.top(); // pull the current node off of the top of the stack and store it
                 current_traversal.pop(); // pop the stack
-                visited_in_current_iteration.erase(current_node); // once a particular node has been fully explored, remove it as we are no longer exploring that path
 
                 for (auto const& entry : adj_list[current_node]) { // iterate over the adjacency list of the current node
                     if (visited_in_current_iteration.find(entry.get_node()) != visited_in_current_iteration.end()) { // if the node has previously been visited in the current DFS, return false as this indicates a back edge
@@ -399,11 +403,76 @@ public:
                     current_traversal.push(entry.get_node());// otherwise put the node on the stack
                     visited_in_current_iteration.emplace(entry.get_node()); // add the node to the set of visited nodes for the current DFS iteration
                 }
+
+                visited_in_current_iteration.erase(current_node); // once a particular node has been fully explored, remove it as we are no longer exploring that path
             }
 
         }
         
         return true;
+
+    }
+
+    const std::vector<T> topological_sort() {
+        if (!is_acyclic()) {
+            throw std::runtime_error("Graph is not acyclic, so topological sort cannot be done.");
+        }
+
+        // what i need to do here 
+        // overall, iterate over nodes and remove ones without incoming edges and add them to my topological sort
+        // keep removing dependencies until all nodes have been explored (trickle up)
+
+        // first => find nodes without dependencies =>  NO INCOMIGN EDGES
+            // have a std::map<T, int> that stores map<node, incoming edges> that includes all of the nodes in the graph
+                // must initialize this by first adding every node into the map and initializing the incoming edges to 0
+                // then iterate over each adjacency list and increment the respective value of outgoing edges in the map
+
+        std::map<T, int> incoming_edges;
+        std::vector<T> topological_ordering;
+
+        for (auto const& [node, adj] : adj_list) {
+            incoming_edges.insert({node, 0});
+        }
+
+        for (auto const& [node, adj] : adj_list) {
+            for (auto const& entry : adj) {
+                incoming_edges[entry.get_node()] += 1;
+            }
+        }
+
+        // now we need to initialize a queue of places to explore with no indegree
+        std::deque<T> no_in_deg;
+
+        for (auto const& [node, incoming] : incoming_edges) {
+            if (incoming == 0) {
+                no_in_deg.push_front(node);
+            }
+        }
+
+        T current_node;
+        while(!no_in_deg.empty()) {
+            // remove item with no indegree from consideration and add it to the topological sort REMOVE IT FROM THE incoming edges map
+            // in addition, we must then adjust all indegree of all nodes that have that node as an in degree
+
+            current_node = no_in_deg.back(); // pull a node off of the queue with nodes without an in degree
+            no_in_deg.pop_back(); // pull it off the queue
+            topological_ordering.push_back(current_node); // push the current node onto the topological ordering
+
+            incoming_edges.erase(current_node); // remove current_node from the map as it is in the topological ordering now
+            
+            for (auto const& entry : adj_list[current_node]) {
+                incoming_edges[entry.get_node()]--;
+            }
+
+            for (auto const& [node, incoming] : incoming_edges) {
+                if (incoming == 0 && (std::find(no_in_deg.begin(), no_in_deg.end(), node) == no_in_deg.end())) {
+                    no_in_deg.push_front(node);
+                }
+            }
+
+        }
+
+        return topological_ordering;
 
     }
 

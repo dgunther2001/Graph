@@ -75,7 +75,9 @@ int main() {
     my_graph3.add_edge(1, 77, 1);
     my_graph3.add_edge(3, 77, 1);
 
-    std::cout << my_graph3.is_acyclic() << "\n";
+    //std::cout << my_graph3.is_acyclic() << "\n";
+
+    my_graph3.print_topological_sort_debug();
 
 
     //my_graph3.topological_sort(1);
