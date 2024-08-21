@@ -38,6 +38,10 @@ private:
     bool directed;
     std::map<T, std::vector<adj_list_entry<T>>> adj_list;
 
+    // implementing adj matrix as well...
+    std::map<T, int> matrix_index_map;
+    std::vector<std::vector<int>> adjacency_matrix;
+
 public:
     graph(bool directed) : directed(directed) {}
     ~graph() {}
@@ -55,6 +59,41 @@ public:
                 std:: cout << entry.get_node() << " ";
             }
 
+            std::cout << "\n";
+        }
+    }
+
+    const void print_adj_matrix_debug() {
+        int count = 0;
+        std::cout << "\t";
+        for (int i = 0; i < adjacency_matrix.size(); i++) {
+            for (auto const& [key, index_mapping] : matrix_index_map) {
+                if (index_mapping == count) {
+                    std::cout << "{" << key << "}" << "\t";
+                }
+            }
+            count++;
+        }
+
+        std::cout << "\n";
+
+        count = 0;
+        for (std::vector<int> adj_vector : adjacency_matrix) { 
+
+            for (auto const& [key, index_mapping] : matrix_index_map) {
+                if (index_mapping == count) {
+                    std::cout << "{" << key << "}" << "\t";
+                }
+                
+            }
+            
+            count++;
+
+            std::cout << " ";
+            for (int weight_val : adj_vector) {
+                std::cout << weight_val << "\t";
+                std::cout << " ";
+            }
             std::cout << "\n";
         }
     }
@@ -171,8 +210,27 @@ public:
     }
 
      void add_node(T node) {
+        // ADD ERROR HANDLING FOR IF KEY EXISTS
+
+        // hash implementation
         std::vector<adj_list_entry<T>> empty_adj_list;
         adj_list.insert({node, empty_adj_list});
+
+        // adj matrix implementation
+        int new_index = adjacency_matrix.size();
+        matrix_index_map.insert({node, new_index});
+        
+        for (std::vector<int>& adjacent_vec : adjacency_matrix) { // apppend 0s to the entire adjacency matrix
+            adjacent_vec.push_back(0);
+        }
+
+        std::vector<int> new_vector;
+        for (int i = 0; i <= new_index; i++) {
+            new_vector.push_back(0);
+        }
+
+        adjacency_matrix.push_back(new_vector);
+
     }
     
     void add_edge(T node_1, T node_2, int weight) {      
@@ -184,12 +242,22 @@ public:
             add_node(node_2);
         }
 
+        // hash implementation
         adj_list_entry<T> primary_entry(node_2, weight);
         adj_list[node_1].push_back(primary_entry);
 
         if (!directed) {
             adj_list_entry<T> secondary_entry(node_1, weight);
             adj_list[node_2].push_back(secondary_entry);
+        }
+
+        // adjacency matrix implementation
+        int node_1_index = matrix_index_map[node_1];
+        int node_2_index = matrix_index_map[node_2];
+        adjacency_matrix[node_1_index][node_2_index] = weight;
+
+        if (!directed) {
+            adjacency_matrix[node_2_index][node_1_index] = weight;
         }
     }
 

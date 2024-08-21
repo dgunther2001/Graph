@@ -21,6 +21,8 @@ int main() {
     my_graph.add_edge('C', 'D', 3);
     my_graph.add_edge('A', 'C', 1);
 
+    my_graph.print_adj_matrix_debug();
+
     //my_graph.print_dfs_debug(1);
 
     //my_graph.print_bfs_debug(1);
@@ -77,7 +79,9 @@ int main() {
 
     //std::cout << my_graph3.is_acyclic() << "\n";
 
-    my_graph3.print_topological_sort_debug();
+    //my_graph3.print_topological_sort_debug();
+
+    //my_graph3.print_adj_matrix_debug();
 
 
     //my_graph3.topological_sort(1);
